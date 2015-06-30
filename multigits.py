@@ -9,6 +9,8 @@ import sys
 
 import org.scan.base.constants as constants
 
+from org.scan.factory.action import ActionFactory
+
 def usage() :
     print '[usage] multigits'
     for key in constants.COMMAND_LIST :
@@ -23,7 +25,20 @@ def main(argv) :
         usage()
         sys.exit(2)
 
-    action = ActionFactory.create(argv[2])
+    argv = argv[1:]
+
+    action = None
+    try :
+        action = ActionFactory.create(argv[0])
+    except KeyError, e :
+        usage()
+        sys.exit(3)
+
+    res = action.parse(argv)
+    if not res :
+        action.error()
+
+    action.execute()
 
 if __name__ == '__main__' :
     main(sys.argv)

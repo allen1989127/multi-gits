@@ -6,5 +6,8 @@ class Action :
     def parse(self, argv) :
         raise NotImplementedError('need to implemented this function')
 
-    def exec(self) :
+    def execute(self) :
+        raise NotImplementedError('need to implemented this function')
+
+    def error(self) :
         raise NotImplementedError('need to implemented this function')
