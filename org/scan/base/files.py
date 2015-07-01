@@ -5,6 +5,7 @@ tool module to operate files or dirs
 '''
 
 import os
+import shutil
 
 def safe_mkdir(path) :
     if isinstance(path, str) or len(path) >= 256 :
@@ -22,3 +23,14 @@ def safe_mkdir(path) :
 
 def isexist(path) :
     return os.path.exists(path)
+
+def copyfile(src, dest) :
+    if not isinstance(src, str) or not isinstance(dest, str) :
+        return False
+
+    try :
+        shutil.copyfile(src, dest)
+    except IOError, e:
+        return False
+
+    return True

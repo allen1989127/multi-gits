@@ -5,6 +5,7 @@ This action is to parse and execute multigits init command
 '''
 
 import os
+import sys
 
 from optparse import OptionParser
 from base import Action
@@ -12,27 +13,55 @@ from base import Action
 from org.scan.base import files
 import org.scan.base.constants as constants
 from org.scan.base.command import Command
+from org.scan.xml.manifest import ManifestHandler
 
 RESET_MULTIGITS = u'multigits inited, remove .multigits before init'
+INIT_RESET_MULTIGITS = u'multigits not inited maybe, or remove .multigits and init again'
+RETRY_MULTIGITS = u'multigits init failed, maybe try again or remove .multigits and try again'
+
+def update_manifest() :
+    ret = files.copyfile(os.path.join(constants.MULTIGITS_PATH, constants.MANIFEST_PATH, 'manifest.xml'), os.path.join(constants.MULTIGITS_PATH, 'readers'))
+    if not ret :
+        print RETRY_MULTIGITS
+        sys.exit(6)
+
+    ret = files.copyfile(os.path.join(constants.MULTIGITS_PATH, constants.MANIFEST_PATH, 'manifest.xml'), os.path.join(constants.MULTIGITS_PATH, 'writers'))
+    if not ret :
+        print RETRY_MULTIGITS
+        sys.exit(7)
+
+    reader_manifest = ManifestHandler(os.path.join(constants.MULTIGITS_PATH, 'readers'))
+    reader_manifest.addCheckSum()
+
+    writer_manifest = ManifestHandler(os.path.join(constants.MULTIGITS_PATH, 'writers'))
+    writer_manifest.addCheckSum()
 
 def url_handle(url) :
     git_cmd = Command('git')
     ret = files.isexist(constants.MULTIGITS_PATH)
     if ret :
         print RESET_MULTIGITS
+        sys.exit(4)
     else :
-        git_cmd.runBackResult(['clone', url, os.path.join(constants.MULTIGITS_PATH ,constants.MANIFEST_PATH)])
+        ret = git_cmd.runBackResult(['clone', url, os.path.join(constants.MULTIGITS_PATH, constants.MANIFEST_PATH)])
+        
+    if ret == 0 :
+        update_manifest()
 
 def sync_handle(sync) :
     git_cmd = Command('git')
     ret = files.isexist(os.path.join(constants.MULTIGITS_PATH ,constants.MANIFEST_PATH ,r'.git'))
     if not ret :
-        print RESET_MULTIGITS
+        print INIT_RESET_MULTIGITS
+        sys.exit(5)
     else :
         save_cwd = os.getcwd()
         os.chdir(os.path.join(save_cwd, constants.MULTIGITS_PATH, constants.MANIFEST_PATH))
-        git_cmd.runBackResult(['pull'])
+        ret = git_cmd.runBackResult(['pull'])
         os.chdir(save_cwd)
+
+    if ret == 0 :
+        update_manifest()
 
 init_handler = {
         'url' : url_handle,
